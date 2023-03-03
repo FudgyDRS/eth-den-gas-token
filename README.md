@@ -5,4 +5,4 @@ Second contract (Token) verified:
 [https://sepolia.etherscan.io/address/0x76c57C952831F450C75fd28DC464B9b8D563fFE4#code](https://sepolia.etherscan.io/address/0x76c57C952831F450C75fd28DC464B9b8D563fFE4#code)
 
 Third contract (Game) verified:
-[https://sepolia.etherscan.io/address/0x37b8A7615eDd512c329468A2932083807337a163#code](https://sepolia.etherscan.io/address/0x37b8A7615eDd512c329468A2932083807337a163#code)
+[https://sepolia.etherscan.io/address//#code](https://sepolia.etherscan.io/address/0x37b8A7615eDd512c329468A2932083807337a163#code)
