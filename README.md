@@ -1,8 +1,16 @@
-First contract (NFT) verified:
-[https://sepolia.etherscan.io/address/0x77eFB7ed59Ca1e35dacA17bAaC473A70fb6E8e54#code](https://sepolia.etherscan.io/address/0x77eFB7ed59Ca1e35dacA17bAaC473A70fb6E8e54#code)
+### Why Does Qi Protocol Exist?
 
-Second contract (Token) verified:
-[https://sepolia.etherscan.io/address/0x76c57C952831F450C75fd28DC464B9b8D563fFE4#code](https://sepolia.etherscan.io/address/0x76c57C952831F450C75fd28DC464B9b8D563fFE4#code)
+- To create a new version of gas token that allows users to manage gas exposures according to their individual risk appetite
 
-Third contract (Game) verified:
-[https://sepolia.etherscan.io/address//#code](https://sepolia.etherscan.io/address/0x37b8A7615eDd512c329468A2932083807337a163#code)
+### What’s The Problem Qi Protocol Tries to Solve
+
+- Ethereum users currently struggle to manage gas prices, which can be volatile and unpredictable. EIP-1559 made gas prices more predictable, yet they still fluctuate heavily over time(see below). This creates challenges for dApp developers and on-chain game developer, who may need to pay for users' gas fees in order to provide a better user experience. Further, miners, MEV searchers, and L2s are all finding solutions that could hedge their gas exposures. Currently, there are few solutions available to help participants hedge their gas exposure.
+
+![From *EIP-1559 In Retrospect* by *Yinhong (William) Zhao, Kartik Nayak*](https://i.imgur.com/lJURP52.png)
+
+From *EIP-1559 In Retrospect* by *Yinhong (William) Zhao, Kartik Nayak*
+
+## How Do We Solve This Problem?
+
+- We propose a new version of gas token that allows users to put up collateral and mint gas tokens. This new design does not create the same problems as the old gas token, as it does not touch the Ethereum protocol level. Furthermore, we plan to leverage novel AMM designs, such as Panoptics and Primitive's Portfolio, to create multiple derivative positions that cater to various Participants’ risk appetites.
+- The original gas token was designed in a research environment with moderate consideration of UX. We are going to embed the gas token into the gas transactions, such like AA(account abstraction) wallet payment, payment to validators through Flashbots bundles to extrapolate all the complexities. Ideally, users should not manage gas token by themselves.
