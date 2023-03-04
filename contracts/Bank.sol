@@ -1,6 +1,10 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
+// in the future to comply with SEC regulations access control must be gated to kill fraudulent accounts
+
 interface IGasToken {
     mint(uint256 amount);
 }
