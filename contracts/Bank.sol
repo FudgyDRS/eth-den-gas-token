@@ -75,7 +75,7 @@ contract Bank {
           * pTotal * [150 / (cTotal / (dTotal * basefee))]
           * index = (150 * dTotal * basefee / cTotal) * pTotal
           * if index > pTotal then search for insert from tail/head
-          * if index < pTotal then search first indeces around it to, then insert
+          * if index < pTotal then search first indecies around it to, then insert
          */
     }
 }

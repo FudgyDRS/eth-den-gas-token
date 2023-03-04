@@ -807,64 +807,31 @@ library SafeMath {
     }
 }
 
-/**
- * @title SafeMathInt
- * @dev Math operations with safety checks that revert on error
- * @dev SafeMath adapted for int256
- * Based on code of  https://github.com/RequestNetwork/requestNetwork/blob/master/packages/requestNetworkSmartContracts/contracts/base/math/SafeMathInt.sol
- */
-library SafeMathInt {
-  function mul(int256 a, int256 b) internal pure returns (int256) {
-    // Prevent overflow when multiplying INT256_MIN with -1
-    // https://github.com/RequestNetwork/requestNetwork/issues/43
-    require(!(a == - 2**255 && b == -1) && !(b == - 2**255 && a == -1));
-
-    int256 c = a * b;
-    require((b == 0) || (c / b == a));
-    return c;
-  }
-
-  function div(int256 a, int256 b) internal pure returns (int256) {
-    // Prevent overflow when dividing INT256_MIN by -1
-    // https://github.com/RequestNetwork/requestNetwork/issues/43
-    require(!(a == - 2**255 && b == -1) && (b > 0));
-
-    return a / b;
-  }
-
-  function sub(int256 a, int256 b) internal pure returns (int256) {
-    require((b >= 0 && a - b <= a) || (b < 0 && a - b > a));
-
-    return a - b;
-  }
-
-  function add(int256 a, int256 b) internal pure returns (int256) {
-    int256 c = a + b;
-    require((b >= 0 && c >= a) || (b < 0 && c < a));
-    return c;
-  }
-
-  function toUint256Safe(int256 a) internal pure returns (uint256) {
-    require(a >= 0);
-    return uint256(a);
-  }
-}
-
-/**
- * @title SafeMathUint
- * @dev Math operations with safety checks that revert on error
- */
-library SafeMathUint {
-  function toInt256Safe(uint256 a) internal pure returns (int256) {
-    int256 b = int256(a);
-    require(b >= 0);
-    return b;
-  }
-}
-
-
-
-contract DogeCake is ERC20, Ownable {
+contract GasToken is ERC20, Ownable, AccessControlEnumerable {
+  /** TWAP Gas basefee:
+      * each gas price is 1.5 bytes = 2^10-1 = 1023 is max supported gas price
+      * 256 / 10 ~= 25 base rolling average
+      * if we choose 256 / 1 ~= 25 R5
+      * then sub(mul(i, 10), 1)
+      *
+      * if we choose 256 / 16 == 16
+      * then sub(mul(i, 16), 1) -> sub(shr(x, 4), 1) 
+      */
+    
+    uint256 public _TWAP; // actual twap, current average of twap sotage slots
+    uint256 private _TWAPSum; // sum of twap storage slots
+    uint256 private _TWAPStorage; // twap storage slots (25 in total, packed little-endian)
+    function BasefeeTWAP() public {
+      assembly {
+        let twapSum_ := sload(_TWAPSum.slot)
+        let twapStorage_ := sload(_TWAPStorage.slot)
+        let oldestMask_ := 0x03FF000000000000000000000000000000000000000000000000000000000000
+        let twapSum_ := add(sub(twapSum_, and(twapStorage_, oldestMask_)), basefee())
+        sstore(_TWAPStorage.slot, add(shl(twapStorage_, 10), basefee()))
+        sstore(_TWAPSum.slot, twapSum_)
+        sstore(_TWAP.slot, div(twapSum_, 25))
+      }
+    }
     using SafeMath for uint256;
 
     IUniswapV2Router02 public uniswapV2Router;
@@ -878,6 +845,7 @@ contract DogeCake is ERC20, Ownable {
     bool public buyBackAndLiquifyEnabled = false;
 
     address public marketingWallet;
+    address public _bankAddress; // bank holds positions and acts as intermeidiary to ATM
     
     uint256 public maxBuyTranscationAmount;
     uint256 public maxSellTransactionAmount;
@@ -891,8 +859,6 @@ contract DogeCake is ERC20, Ownable {
     uint256 public totalFees;
 
     uint256 public sellFeeIncreaseFactor = 130;
-
-    uint256 public gasForProcessing = 600000;
     
     address public presaleAddress;
 
@@ -914,26 +880,35 @@ contract DogeCake is ERC20, Ownable {
 
     event MarketingWalletUpdated(address indexed newMarketingWallet, address indexed oldMarketingWallet);
 
-    event GasForProcessingUpdated(uint256 indexed newValue, uint256 indexed oldValue);
 
     event SwapAndLiquify(
-        uint256 tokensSwapped,
-        uint256 cakeReceived,
-        uint256 tokensIntoLiqudity
+      uint256 tokensSwapped,
+      uint256 cakeReceived,
+      uint256 tokensIntoLiqudity
     );
     
     event SwapETHForTokens(
-        uint256 amountIn,
-        address[] path
+      uint256 amountIn,
+      address[] path
     );
 
+    
 
-    constructor() ERC20("RGas", "RGAS") {
+    event BaseFeeTWAP(uint256 TWAP);
+    event CreatePosition(address account, uint256 collateral, uint256 debt, uint256 loan, );
+    event EmitGasBaseFee(uint256 basefee)
+
+
+    constructor(address bank_) ERC20("RGas", "RGAS") {
+        //createRole(MINTER_ROLE)
+        //setRole(MINTER_ROLE, bank_)
+
+      
 
     	marketingWallet = 0xbD4EAfe5215830399a9a30bA588fbe4180014639;
     	
     	IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
-      ISwapRouter _uniswapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+        ISwapRouter _uniswapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
          // Create a uniswap pair for this new token
         address _uniswapV2Pair = IUniswapV2Factory(_uniswapRouter.factory())
           .createPair(address(this), _uniswapV2Router.WETH());
@@ -979,7 +954,7 @@ contract DogeCake is ERC20, Ownable {
   	
 	
   	function updateMarketingWallet(address _newWallet) external onlyOwner {
-  	    require(_newWallet != marketingWallet, "DogeCake: The marketing wallet is already this address");
+  	    require(_newWallet != marketingWallet, "The marketing wallet is already this address");
         excludeFromFees(_newWallet, true);
         emit MarketingWalletUpdated(marketingWallet, _newWallet);
   	    marketingWallet = _newWallet;
@@ -1048,25 +1023,25 @@ contract DogeCake is ERC20, Ownable {
  
     
     function updateMarketingFee(uint8 newFee) external onlyOwner {
-        require(newFee <= 6, "DogeCake: Fee must be less than 6%");
+        require(newFee <= 6, "Fee must be less than 6%");
         marketingFee = newFee;
         totalFees = marketingFee.add(buyBackAndLiquidityFee);
     }
     
     function updateBuyBackAndLiquidityFee(uint8 newFee) external onlyOwner {
-        require(newFee <= 6, "DogeCake: Fee must be less than 6%");
+        require(newFee <= 6, "Fee must be less than 6%");
         buyBackAndLiquidityFee = newFee;
         totalFees = buyBackAndLiquidityFee.add(marketingFee);
     }
 
     function updateUniswapV2Router(address newAddress) external onlyOwner {
-        require(newAddress != address(uniswapV2Router), "DogeCake: The router already has that address");
+        require(newAddress != address(uniswapV2Router), "The router already has that address");
         emit UpdateUniswapV2Router(newAddress, address(uniswapV2Router));
         uniswapV2Router = IUniswapV2Router02(newAddress);
     }
 
     function excludeFromFees(address account, bool excluded) public onlyOwner {
-        require(isExcludedFromFees[account] != excluded, "DogeCake: Account is already exluded from fees");
+        require(isExcludedFromFees[account] != excluded, "Account is already exluded from fees");
         isExcludedFromFees[account] = excluded;
 
         emit ExcludeFromFees(account, excluded);
@@ -1082,25 +1057,17 @@ contract DogeCake is ERC20, Ownable {
     }
 
     function setAutomatedMarketMakerPair(address pair, bool value) public onlyOwner {
-        require(pair != uniswapV2Pair, "DogeCake: The PancakeSwap pair cannot be removed from automatedMarketMakerPairs");
+        require(pair != uniswapV2Pair, "The PancakeSwap pair cannot be removed from automatedMarketMakerPairs");
 
         _setAutomatedMarketMakerPair(pair, value);
     }
 
     function _setAutomatedMarketMakerPair(address pair, bool value) private onlyOwner {
-        require(automatedMarketMakerPairs[pair] != value, "DogeCake: Automated market maker pair is already set to that value");
+        require(automatedMarketMakerPairs[pair] != value, "Automated market maker pair is already set to that value");
         automatedMarketMakerPairs[pair] = value;
 
         emit SetAutomatedMarketMakerPair(pair, value);
     }
-
-    function updateGasForProcessing(uint256 newValue) external onlyOwner {
-        require(newValue != gasForProcessing, "DogeCake: Cannot update gasForProcessing to same value");
-        gasForProcessing = newValue;
-        emit GasForProcessingUpdated(newValue, gasForProcessing);
-    }
-   
-
 
     function getIsExcludedFromFees(address account) public view returns(bool) {
         return isExcludedFromFees[account];
