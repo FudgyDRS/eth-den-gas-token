@@ -936,7 +936,8 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
         _mint(owner(), 100000000000 * (10**18));
     }
 
-    receive() external payable {}
+  receive() external payable {} // contract can receive ETH 
+  fallback() external {} // contract can be sent raw bytecode
 
   function grantMint(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
     _grantRole(MINTER_ROLE, account);

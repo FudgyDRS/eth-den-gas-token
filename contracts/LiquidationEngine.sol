@@ -32,4 +32,7 @@ contract LiquidationEngine {
   function revokeMint(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
     _revokeRole(MINTER_ROLE, account);
   }
+
+  receive() external payable {} // contract can receive ETH 
+  fallback() external {} // contract can be sent raw bytecode
 }
