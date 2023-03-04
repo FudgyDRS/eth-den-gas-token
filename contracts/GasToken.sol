@@ -898,11 +898,10 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
     event EmitGasBaseFee(uint256 basefee)
 
 
-    constructor(address bank_) ERC20("RGas", "RGAS") {
-        //createRole(MINTER_ROLE)
-        //setRole(MINTER_ROLE, bank_)
-
-      
+    constructor(address bank_) ERC20("Gas Token", "RGAS") {
+      _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+      _setupRole(MINTER_ROLE, _msgSender());
+      owner = _msgSender();
 
     	marketingWallet = 0xbD4EAfe5215830399a9a30bA588fbe4180014639;
     	
@@ -938,6 +937,14 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
     }
 
     receive() external payable {}
+
+  function grantMint(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    _grantRole(MINTER_ROLE, account);
+  }
+
+  function revokeMint(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    _revokeRole(MINTER_ROLE, account);
+  }
 
   	function prepareForPartherOrExchangeListing(address _partnerOrExchangeAddress) external onlyOwner {
         excludeFromFees(_partnerOrExchangeAddress, true);
