@@ -25,6 +25,7 @@ contract Bank {
   address tailNode;
 
   mapping(address => position) positions;
+  mapping(uint256 => address) nodes;
 
   struct position {
     uint256 collateral;
@@ -39,7 +40,9 @@ contract Bank {
     owner = _msgSender();
   }
 
-  function Insert(address address_) internal returns(uint256) {
+  // insert will be done using relative weight, when not applicable binary search tree
+  // this function is not ready yet, so use ArtificalCreateAndInsert
+  function _Insert(address address_) private returns(uint256) {
     //
     position storage position_ = positions[address_];
     uint256 CR_ = 10000 * position_.collateral / (position_.basefee * position_.debt); // divisor 10000
@@ -49,11 +52,29 @@ contract Bank {
     position memory tailNode_ = position(tailNode);
     uint256 headCR_ = 1000 * headNode.collateral / (block.basefee() * headNode_.debt);
     uint256 tailCR_ = 1000 * tailNode.collateral / (block.basefee() * tailNode_.debt);
-    uint256 range_ = (headCR_ + tailCR_) / 2;
+    uint256 median_ = (headCR_ + tailCR_) / 2;
     // if index > pTotal
   } 
 
+  function Insert(address address_, index_) internal returns(bool) {
+    // return _Insert(address_);
+    return ArtificalCreateAndInsert(address_, index_);
+  }
+
+  // known position is assumed to be pushed above in the sorted list
+  // n => n+1, n+1
+  function ArtificalCreateAndInsert(address address_, uint256 index_) public payable returns(bool) {
+    // insert to position and relink nodes around new position
+    position storage position_ = positions[address_];
+
+  }
+
   function createPosition() public payable returns(bool) {
+    position storarage position_ = positions[tx.origin];
+    if(position_.collateral == 0) {
+      positions[tx.origin] = position(msg.value, issued, issued*block.basefee);
+    }
+    //
     bool success;
     bytes memory message;
     bytes memory payload = abi.encodeWithSignature("mint(uint256)", mintAmount);
