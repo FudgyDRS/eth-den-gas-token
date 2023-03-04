@@ -15,13 +15,14 @@ contract Bank {
   uint256 cTotal; // total collateral of accounts
   uint256 aTotal; // total number of accounts
   uint256 pTotal; // total number of positions
-  uint256 headNode;
-  uint256 tailNode;
   uint256 initFee; // Fee for minting gas tokens
                     // when a redemption occurs, the initFee goes up
                     // when redemptions do not occur, the initFee lowers over time
                     // should be a function of a cost of doing arbitrage
   uint256 redeemFee; // basically opposite of initFee
+
+  address headNode;
+  address tailNode;
 
   mapping(address => position) positions;
 
@@ -37,6 +38,20 @@ contract Bank {
     _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
     owner = _msgSender();
   }
+
+  function Insert(address address_) internal returns(uint256) {
+    //
+    position storage position_ = positions[address_];
+    uint256 CR_ = 10000 * position_.collateral / (position_.basefee * position_.debt); // divisor 10000
+    // create weight of current solvency
+    uint256 weight_ = 150 * dTotal * basefee / cTotal; // weight can be above 1 (significantly overcollateralized vault)
+    position memory headNode_ = position(headNode);
+    position memory tailNode_ = position(tailNode);
+    uint256 headCR_ = 1000 * headNode.collateral / (block.basefee() * headNode_.debt);
+    uint256 tailCR_ = 1000 * tailNode.collateral / (block.basefee() * tailNode_.debt);
+    uint256 range_ = (headCR_ + tailCR_) / 2;
+    // if index > pTotal
+  } 
 
   function createPosition() public payable returns(bool) {
     bool success;
