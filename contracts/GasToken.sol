@@ -818,23 +818,18 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
       * then sub(mul(i, 16), 1) -> sub(shr(x, 4), 1) 
       */
     
-    uint256 public _TWAP;
-    uint256 private _TWAPStorage;
+    uint256 public _TWAP; // actual twap, current average of twap sotage slots
+    uint256 private _TWAPSum; // sum of twap storage slots
+    uint256 private _TWAPStorage; // twap storage slots (25 in total, packed little-endian)
     function BasefeeTWAP() public {
       assembly {
+        let twapSum_ := sload(_TWAPSum.slot)
         let twapStorage_ := sload(_TWAPStorage.slot)
-        //let basefee_ := basefee()
-        let mask_ := 0x3FF // b10: 1023
-                           // b2:  1111111111
-        let total_ := basefee() // adding
-        mask_ := shl(0x3FF, 10)
-        shl(twapStorage_, 10)
-        twapStorage := and(twapStorage_, basefee_)
-        for {let i:=1} lt(i, 10) {i:=add(i, 1)} {
-          let shift_ := sub(mul(i, 10), 1)
-          total_ := add(total_, and(mask_, shr(twapStorage_, mul(i, 10)
-        } 
-        // figure out the current TWAP
+        let oldestMask_ := 0x03FF000000000000000000000000000000000000000000000000000000000000
+        let twapSum_ := add(sub(twapSum_, and(twapStorage_, oldestMask_)), basefee())
+        sstore(_TWAPStorage.slot, add(shl(twapStorage_, 10), basefee()))
+        sstore(_TWAPSum.slot, twapSum_)
+        sstore(_TWAP.slot, div(twapSum_, 25))
       }
     }
     using SafeMath for uint256;
