@@ -5,33 +5,35 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
 // in the future to comply with SEC regulations access control must be gated to kill fraudulent accounts
 
-interface IGasToken {
-  mint(uint256 amount);
-}
+// interface IGasToken {} // setup later
 
-contract Bank {
+contract Bank is Ownable, AccessControlEnumerable {
   mapping(address => position) _positions;
-  mapping(uint256 => address) _nodes; 
-  uint256[] _map// A -> B -> C -> ... -> n
 
+  // --------------------------------------------------------------------------
+  /// NOT IN USE FOR THIS VERSION
+  mapping(uint256 => address) _nodes; 
+  uint256[] _map;// A -> B -> C -> ... -> n // not yet used
   uint256 dTotal;   // total debt currently issued
   uint256 gTotal;   // total gas currently issued
   uint256 cTotal;   // total collateral of accounts
   uint256 aTotal;   // total number of accounts
   uint256 pTotal;   // total number of positions
+  // --------------------------------------------------------------------------
+
   /** Fee for minting gas tokens
     *   - when a redemption occurs, the initFee goes up
     *   - when redemptions do not occur, the initFee lowers over time
     *   - should be a function of a cost of doing arbitrage
     */
-  uint256 initFee;  // fee for minting gas tokens
-  uint256 burnFee;  // fee for burning gas tokens to claim collateral
-  uint256 redeemFee; // weird fee similar to RAI redemption
+  uint256 _initFee;  // fee for minting gas tokens
+  uint256 _burnFee;  // fee for burning gas tokens to claim collateral
+  uint256 _redeemFee; // weird fee similar to RAI redemption
 
   address headNode;
   address tailNode;
 
-  
+  event positionCreated(address account, uint256 collateral, uint256 debt, uint256 basefee);
 
   function getIndex(uint256 index_) private returns(uint256 node_) {
     assembly {
@@ -40,6 +42,7 @@ contract Bank {
     }
   }
   /**
+  DATA STRUCTURE CONSIDERATION NOTES:
   what if memory locations had some gaps between them
   ID    NODE
   insert    1 -> next 5 are blank -> node3
@@ -118,17 +121,16 @@ contract Bank {
 
   constructor() {
     _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-    owner = _msgSender();
   }
 
   // insert will be done using relative weight, when not applicable binary search tree
   // this function is not ready yet, so use ArtificalCreateAndInsert
   function _Insert(address address_) private returns(uint256) {
     //
-    position storage position_ = positions[address_];
+    position storage position_ = _positions[address_];
     uint256 CR_ = 10000 * position_.collateral / (position_.basefee * position_.debt); // divisor 10000
     // create weight of current solvency
-    uint256 weight_ = 150 * dTotal * basefee / cTotal; // weight can be above 1 (significantly overcollateralized vault)
+    uint256 weight_ = 150 * dTotal * block.basefee / cTotal; // weight can be above 1 (significantly overcollateralized vault)
     position memory headNode_ = position(headNode);
     position memory tailNode_ = position(tailNode);
     uint256 headCR_ = 1000 * headNode.collateral / (block.basefee() * headNode_.debt);
@@ -137,7 +139,7 @@ contract Bank {
     // if index > pTotal
   } 
 
-  function Insert(address address_, index_) internal returns(bool) {
+  function Insert(address address_, address index_) internal returns(bool) {
     // return _Insert(address_);
     return InsertAt(address_, index_);
     /**
@@ -163,9 +165,9 @@ contract Bank {
   
    */
   // n => n+1, n+1
-  function InsertAt(address address_, uint256 index_) public payable returns(bool) {
+  function InsertAt(address address_, address index_) public payable returns(bool) {
     // insert to position and relink nodes around new position
-    position storage position_ = positions[address_];
+    position storage position_ = _positions[address_];
 
   }
 
@@ -182,15 +184,15 @@ contract Bank {
    //   will directly shift the burden on gas onto the consumer
    uint256 _minCollateral;
   function createPosition() public payable returns(bool) {
-    require(msg.value > _initfee, "New collateral <= init");
-    uint256 value_ = msg.value - init;
-    require(value_ >= _minCollateral)
+    require(msg.value > _initFee, "New collateral <= init");
+    uint256 value_ = msg.value - _initFee;
+    require(value_ >= _minCollateral, "Min collateral not met");
     
     uint256 mintAmount_ = 150 * value_ / 100;
-    position storage position_ = positions[tx.origin];
+    position storage position_ = _positions[tx.origin];
     if(position_.collateral == 0) {
       // node 1 == null
-      position_ = position(value_, issued, issued*block.basefee, 1, 1);
+      position_ = position(value_, mintAmount_, block.basefee, 1, 1);
     } else {
       uint256 newcollateral_ = position_.collateral + value_;
       uint256 newdebt_ = position_.debt + mintAmount_;
@@ -234,7 +236,7 @@ contract Bank {
     // collateral / (basefee * gas)
 
     
-    positions[tx.origin] = position(msg.value, issued, issued*block.basefee);
+    _positions[tx.origin] = position(msg.value, issued, issued*block.basefee);
     //take the ETH temp
     //send the ETH to the vault
     //mint and then issue Pgas

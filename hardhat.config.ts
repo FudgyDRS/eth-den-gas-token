@@ -20,17 +20,33 @@ const config = {
     bscTestnet: {
       url: "https://data-seed-prebsc-1-s3.binance.org:8545/",
       chainId: 97,
-      accounts: [process.env.KEY_TESTNET],
+      accounts: [process.env.PRIVATE_KEY],
     },
     sepoliaTestnet: {
       url: process.env.INFURA_API_SEPOLIA,
       chainId: 11155111,
-      accounts: [process.env.KEY_TESTNET],
+      accounts: [process.env.PRIVATE_KEY],
     },
     goreliTestnet: {
       url: process.env.ALCHEMY_API_GORELI,
       chainId: 5,
-      accounts: [process.env.KEY_TESTNET],
+      accounts: [process.env.PRIVATE_KEY],
+    },
+    scrollTestnet: {
+      url: process.env.SCROLL_TESTNET_URL || "",
+      chainId: 534353,
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
+    mantleTestnet: {
+      url: "https://rpc.testnet.mantle.xyz/",
+      chainId: 5001,
+      accounts: [process.env.PRIVATE_KEY]
+    },
+    mumbaiTestnet: {
+      url: process.env.INFURA_API_MUMBAI,
+      chainId: 80001,
+      accounts: [process.env.PRIVATE_KEY],
     },
   },
   solidity: {

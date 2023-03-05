@@ -895,7 +895,6 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
     
 
     event BaseFeeTWAP(uint256 TWAP);
-    event CreatePosition(address account, uint256 collateral, uint256 debt, uint256 loan, );
     event EmitGasBaseFee(uint256 basefee)
 
 
