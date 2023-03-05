@@ -270,6 +270,15 @@ contract Bank is Ownable, AccessControlEnumerable {
       */
   }
 
+  /**
+    * Burn Process (not protected by reentry):
+    * 1) Check if users have sufficent loan size to be burn (by default this is set to zero)
+    * 2) Check if input burn value is greater than zero
+    * 3) Check if collateral position exists
+    * 4) Check if deb position exits
+    * 5) Check users balance of tokens is greater than or equal to input amount
+    * 6) Withdraw the position 
+   */
   function BurnPosition(uint256 amount_) public payable returns(bool) {
     require(msg.value >= _burnFee, "Insufficent funds");
     position storage position_ = _positions[tx.origin];
@@ -291,6 +300,7 @@ contract Bank is Ownable, AccessControlEnumerable {
         _positions[position_.nextNode].prevNode = position_.prevNode;
       }
     }
+    return true;
     // should be reinserted but not for MVP
 
   }
