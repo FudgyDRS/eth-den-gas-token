@@ -217,26 +217,9 @@ contract Bank is Ownable, AccessControlEnumerable {
     //  with a money transmitter liscense)
     (success, message) = Vault.call{value: value_}("");
     // Service fee for minting, likely will be transmitted to LP to maintain gas pegging
-    (success, message) = Treasury.call{value: _initfee}("");
+    (success, message) = Treasury.call{value: _initFee}("");
 
-    uint256 issued = msg.value*150/100;
-    uint256 cAmount;
-    uint256 gAmount;
-    uint256 dAmount;
-      /**
-      add collateral
-      mint qi token
-      show eth locked is in vault
-      deposit to mint, init fee fixed
-      withdraw to burn, burn fee fixed
-      redeem fee fixed
-       */
-
-    // instantaneous CR
-    // collateral / (basefee * gas)
-
-    
-    _positions[tx.origin] = position(msg.value, issued, issued*block.basefee);
+    emit positionCreated(tx.origin, position_.collateral, position_.debt, position_.basefee);
     //take the ETH temp
     //send the ETH to the vault
     //mint and then issue Pgas

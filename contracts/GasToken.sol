@@ -194,7 +194,7 @@ contract ERC20 is Context, IERC20Minimal {
      * - `spender` cannot be the zero address.
      */
     function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
         return true;
     }
 
@@ -238,7 +238,7 @@ contract ERC20 is Context, IERC20Minimal {
         _beforeTokenTransfer(sender, recipient, amount);
 
         _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
-        _balances[recipient] = _balances[recipient].add(amount);
+        _balances[recipient] = _balances[recipient] + amount;
         emit Transfer(sender, recipient, amount);
     }
 
@@ -256,8 +256,8 @@ contract ERC20 is Context, IERC20Minimal {
 
         _beforeTokenTransfer(address(0), account, amount);
 
-        _totalSupply = _totalSupply.add(amount);
-        _balances[account] = _balances[account].add(amount);
+        _totalSupply = _totalSupply + amount;
+        _balances[account] = _balances[account] + amount;
         emit Transfer(address(0), account, amount);
     }
 
@@ -832,8 +832,8 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
         // needs logi emit
       }
     }
-    using SafeMath for uint256;
 
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     IUniswapV2Router02 public uniswapV2Router;
     address public immutable uniswapV2Pair;
 
@@ -1003,7 +1003,7 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
             buyBackAndLiquifyEnabled = _enabled;
         } else {
             buyBackAndLiquidityFee = previousBuyBackAndLiquidityFee;
-            totalFees = buyBackAndLiquidityFee.add(marketingFee);
+            totalFees = buyBackAndLiquidityFee + marketingFee;
             buyBackAndLiquifyEnabled = _enabled;
         }
         
@@ -1019,7 +1019,7 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
             marketingEnabled = _enabled;
         } else {
             marketingFee = previousMarketingFee;
-            totalFees = marketingFee.add(buyBackAndLiquidityFee);
+            totalFees = marketingFee + buyBackAndLiquidityFee;
             marketingEnabled = _enabled;
         }
 
@@ -1032,13 +1032,13 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
     function updateMarketingFee(uint8 newFee) external onlyOwner {
         require(newFee <= 6, "Fee must be less than 6%");
         marketingFee = newFee;
-        totalFees = marketingFee.add(buyBackAndLiquidityFee);
+        totalFees = marketingFee + buyBackAndLiquidityFee;
     }
     
     function updateBuyBackAndLiquidityFee(uint8 newFee) external onlyOwner {
         require(newFee <= 6, "Fee must be less than 6%");
         buyBackAndLiquidityFee = newFee;
-        totalFees = buyBackAndLiquidityFee.add(marketingFee);
+        totalFees = buyBackAndLiquidityFee + marketingFee;
     }
 
     function updateUniswapV2Router(address newAddress) external onlyOwner {
