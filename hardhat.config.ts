@@ -34,7 +34,7 @@ const config = {
     },
     scrollTestnet: {
       url: process.env.SCROLL_TESTNET_URL || "",
-      chainId: 534353,
+      chainId: 534351,
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
@@ -49,7 +49,7 @@ const config = {
       accounts: [process.env.PRIVATE_KEY],
     },
     neonTestnet: {
-      url: "https://devnet.neonevm.org",
+      url: "https://devnet.neonevm.org/",
       chainId: 245022926,
       accounts: [process.env.PRIVATE_KEY],
     }
