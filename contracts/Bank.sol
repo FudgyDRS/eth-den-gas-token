@@ -32,6 +32,9 @@ contract Bank is Ownable, AccessControlEnumerable {
 
   address headNode;
   address tailNode;
+  address _gasToken;
+  address _vault;
+  address _treasury;
 
   event positionCreated(address account, uint256 collateral, uint256 debt, uint256 basefee);
 
@@ -119,9 +122,16 @@ contract Bank is Ownable, AccessControlEnumerable {
     uint256 nextNode;
   }
 
-  constructor() {
+  constructor(address gasToken_, address vault_, address treasury_) {
     _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    _gasToken = gasToken_;
+    _vault = vault_;
+    _treasury = treasury_;
   }
+
+  function GasToken() public view returns(address) { return _gasToken; }
+  function Vault() public view returns(address) { return _vault; }
+  function Treasury() public view returns(address) { return _treasury; }
 
   // insert will be done using relative weight, when not applicable binary search tree
   // this function is not ready yet, so use ArtificalCreateAndInsert

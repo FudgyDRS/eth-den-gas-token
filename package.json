@@ -21,8 +21,10 @@
     "test:lerna": "lerna run test",
     "compile": "npx hardhat compile",
     "deploy:testnet1": "npx hardhat run --network sepoliaTestnet scripts/deploy.ts",
-    "deploy:testnet2": "npx hardhat run --network bnbTestnet scripts/deploy.ts",
-    "verify:sepoliaTestnet": "npx hardhat verify '0x77eFB7ed59Ca1e35dacA17bAaC473A70fb6E8e54' --network sepoliaTestnet",
+    "deploy:testnet2": "npx hardhat run --network scrollTestnet scripts/deploy.ts",
+    "deploy:testnet3": "npx hardhat run --network mantleTestnet scripts/deploy.ts",
+    "deploy:testnet4": "npx hardhat run --network mumbaiTestnet scripts/deploy.ts",
+    "deploy:testnet5": "npx hardhat run --network neonTestnet scripts/deploy.ts",
     "test": "npx hardhat test",
     "test:coverage": "npx hardhat coverage",
     "test:size-contracts": "npx hardhat size-contracts"

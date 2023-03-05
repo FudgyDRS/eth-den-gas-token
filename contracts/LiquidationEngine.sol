@@ -5,7 +5,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
 
 contract LiquidationEngine is Ownable, AccessControlEnumerable {
-  constructor() {
+  constructor(address gasToken_, address bank_) {
     _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
   }
 

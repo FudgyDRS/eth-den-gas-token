@@ -808,136 +808,140 @@ library SafeMath {
 
 contract GasToken is ERC20, Ownable, AccessControlEnumerable {
   /** TWAP Gas basefee:
-      * each gas price is 1.5 bytes = 2^10-1 = 1023 is max supported gas price
-      * 256 / 10 ~= 25 base rolling average
-      * if we choose 256 / 1 ~= 25 R5
-      * then sub(mul(i, 10), 1)
-      *
-      * if we choose 256 / 16 == 16
-      * then sub(mul(i, 16), 1) -> sub(shr(x, 4), 1) 
-      */
+    * each gas price is 1.5 bytes = 2^10-1 = 1023 is max supported gas price
+    * 256 / 10 ~= 25 base rolling average
+    * if we choose 256 / 1 ~= 25 R5
+    * then sub(mul(i, 10), 1)
+    *
+    * if we choose 256 / 16 == 16
+    * then sub(mul(i, 16), 1) -> sub(shr(x, 4), 1) 
+    */
     
-    uint256 public _TWAP; // actual twap, current average of twap sotage slots
-    uint256 private _TWAPSum; // sum of twap storage slots
-    uint256 private _TWAPStorage; // twap storage slots (25 in total, packed little-endian)
-    function BasefeeTWAP() public {
-      assembly {
-        let twapSum_ := sload(_TWAPSum.slot)
-        let twapStorage_ := sload(_TWAPStorage.slot)
-        let oldestMask_ := 0x03FF000000000000000000000000000000000000000000000000000000000000
-        let twapSum_ := add(sub(twapSum_, and(twapStorage_, oldestMask_)), basefee())
-        sstore(_TWAPStorage.slot, add(shl(twapStorage_, 10), basefee()))
-        sstore(_TWAPSum.slot, twapSum_)
-        sstore(_TWAP.slot, div(twapSum_, 25))
-        // needs logi emit
-      }
+  uint256 public _TWAP; // actual twap, current average of twap sotage slots
+  uint256 private _TWAPSum; // sum of twap storage slots
+  uint256 private _TWAPStorage; // twap storage slots (25 in total, packed little-endian)
+  function BasefeeTWAP() public {
+    assembly {
+      let twapSum_ := sload(_TWAPSum.slot)
+      let twapStorage_ := sload(_TWAPStorage.slot)
+      let oldestMask_ := 0x03FF000000000000000000000000000000000000000000000000000000000000
+      let twapSum_ := add(sub(twapSum_, and(twapStorage_, oldestMask_)), basefee())
+      sstore(_TWAPStorage.slot, add(shl(twapStorage_, 10), basefee()))
+      sstore(_TWAPSum.slot, twapSum_)
+      sstore(_TWAP.slot, div(twapSum_, 25))
+      // needs logi emit
     }
+  }
 
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    IUniswapV2Router02 public uniswapV2Router;
-    address public immutable uniswapV2Pair;
+  bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+  IUniswapV2Router02 public uniswapV2Router;
+  address public immutable uniswapV2Pair;
 
-    address public deadAddress = 0x000000000000000000000000000000000000dEaD;
+  address public deadAddress = 0x000000000000000000000000000000000000dEaD;
 
-    bool private swapping;
-    bool public tradingIsEnabled = false;
-    bool public marketingEnabled = false;
-    bool public buyBackAndLiquifyEnabled = false;
+  bool private swapping;
+  bool public tradingIsEnabled = false;
+  bool public marketingEnabled = false;
+  bool public buyBackAndLiquifyEnabled = false;
 
-    address public marketingWallet;
-    address public _bankAddress; // bank holds positions and acts as intermeidiary to ATM
+  address public marketingWallet;
+  address public _bankAddress; // bank holds positions and acts as intermeidiary to ATM
+  
+  uint256 public maxBuyTranscationAmount;
+  uint256 public maxSellTransactionAmount;
+  uint256 public swapTokensAtAmount;
+  uint256 public maxWalletToken; 
+
+  uint256 public marketingFee;
+  uint256 public previousMarketingFee;
+  uint256 public buyBackAndLiquidityFee;
+  uint256 public previousBuyBackAndLiquidityFee;
+  uint256 public totalFees;
+
+  uint256 public sellFeeIncreaseFactor = 130;
+  
+  address public presaleAddress;
+
+  mapping (address => bool) private isExcludedFromFees;
+
+  // store addresses that a automatic market maker pairs. Any transfer *to* these addresses
+  // could be subject to a maximum transfer amount
+  mapping (address => bool) public automatedMarketMakerPairs;
+
+  event UpdateUniswapV2Router(address indexed newAddress, address indexed oldAddress);
+  
+  event BuyBackAndLiquifyEnabledUpdated(bool enabled);
+  event MarketingEnabledUpdated(bool enabled);
+
+  event ExcludeFromFees(address indexed account, bool isExcluded);
+  event ExcludeMultipleAccountsFromFees(address[] accounts, bool isExcluded);
+
+  event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
+
+  event MarketingWalletUpdated(address indexed newMarketingWallet, address indexed oldMarketingWallet);
+
+
+  event SwapAndLiquify(
+    uint256 tokensSwapped,
+    uint256 cakeReceived,
+    uint256 tokensIntoLiqudity
+  );
     
-    uint256 public maxBuyTranscationAmount;
-    uint256 public maxSellTransactionAmount;
-    uint256 public swapTokensAtAmount;
-    uint256 public maxWalletToken; 
+  event SwapETHForTokens(
+    uint256 amountIn,
+    address[] path
+  );
 
-    uint256 public marketingFee;
-    uint256 public previousMarketingFee;
-    uint256 public buyBackAndLiquidityFee;
-    uint256 public previousBuyBackAndLiquidityFee;
-    uint256 public totalFees;
+  event BaseFeeTWAP(uint256 TWAP);
+  event EmitGasBaseFee(uint256 basefee);
 
-    uint256 public sellFeeIncreaseFactor = 130;
+
+  constructor() ERC20("QI Gas Token", "QI") {
+    _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    _setupRole(MINTER_ROLE, _msgSender());
+    owner = _msgSender();
+
+    marketingWallet = 0xbD4EAfe5215830399a9a30bA588fbe4180014639;
     
-    address public presaleAddress;
+    IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+    ISwapRouter _uniswapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+      // Create a uniswap pair for this new token
+    address _uniswapV2Pair = IUniswapV2Factory(_uniswapRouter.factory())
+      .createPair(address(this), _uniswapV2Router.WETH());
 
-    mapping (address => bool) private isExcludedFromFees;
-
-    // store addresses that a automatic market maker pairs. Any transfer *to* these addresses
-    // could be subject to a maximum transfer amount
-    mapping (address => bool) public automatedMarketMakerPairs;
-
-    event UpdateUniswapV2Router(address indexed newAddress, address indexed oldAddress);
+    address tokenA = address(this);
+    address tokenB = WETH9();
+    //factory = 0x1F98431c8aD98523631AE4a59f267346ea31F984
+    //router = 0xE592427A0AEce92De3Edee1F18E0157C05861564
     
-    event BuyBackAndLiquifyEnabledUpdated(bool enabled);
-    event MarketingEnabledUpdated(bool enabled);
+    address _uniswapV3Pool = IUniswapV3Factory(IPeripheryImmutableState().factory())
+      .createPool(tokenA, tokenB, poolFee);
 
-    event ExcludeFromFees(address indexed account, bool isExcluded);
-    event ExcludeMultipleAccountsFromFees(address[] accounts, bool isExcluded);
+    uniswapV2Router = _uniswapV2Router;
+    uniswapV2Pair = _uniswapV2Pair;
 
-    event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
+    _setAutomatedMarketMakerPair(_uniswapV2Pair, true);
 
-    event MarketingWalletUpdated(address indexed newMarketingWallet, address indexed oldMarketingWallet);
-
-
-    event SwapAndLiquify(
-      uint256 tokensSwapped,
-      uint256 cakeReceived,
-      uint256 tokensIntoLiqudity
-    );
+    // exclude from paying fees or having max transaction amount
+    excludeFromFees(marketingWallet, true);
+    excludeFromFees(address(this), true);
+    excludeFromFees(owner(), true);
     
-    event SwapETHForTokens(
-      uint256 amountIn,
-      address[] path
-    );
-
-    
-
-    event BaseFeeTWAP(uint256 TWAP);
-    event EmitGasBaseFee(uint256 basefee)
-
-
-    constructor(address bank_) ERC20("Gas Token", "RGAS") {
-      _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-      _setupRole(MINTER_ROLE, _msgSender());
-      owner = _msgSender();
-
-    	marketingWallet = 0xbD4EAfe5215830399a9a30bA588fbe4180014639;
-    	
-    	IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
-        ISwapRouter _uniswapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
-         // Create a uniswap pair for this new token
-        address _uniswapV2Pair = IUniswapV2Factory(_uniswapRouter.factory())
-          .createPair(address(this), _uniswapV2Router.WETH());
-
-        address tokenA = address(this);
-        address tokenB = WETH9();
-        //factory = 0x1F98431c8aD98523631AE4a59f267346ea31F984
-        //router = 0xE592427A0AEce92De3Edee1F18E0157C05861564
-        
-        address _uniswapV3Pool = IUniswapV3Factory(IPeripheryImmutableState().factory())
-          .createPool(tokenA, tokenB, poolFee);
-
-        uniswapV2Router = _uniswapV2Router;
-        uniswapV2Pair = _uniswapV2Pair;
-
-        _setAutomatedMarketMakerPair(_uniswapV2Pair, true);
-
-        // exclude from paying fees or having max transaction amount
-        excludeFromFees(marketingWallet, true);
-        excludeFromFees(address(this), true);
-        excludeFromFees(owner(), true);
-        
-        /*
-            _mint is an internal function in ERC20.sol that is only called here,
-            and CANNOT be called ever again
-        */
-        _mint(owner(), 100000000000 * (10**18));
-    }
+    /*
+      _mint is an internal function in ERC20.sol that is only called here,
+      and CANNOT be called ever again
+    */
+    _mint(owner(), 100000000000 * (10**18));
+  }
 
   receive() external payable {} // contract can receive ETH 
   fallback() external {} // contract can be sent raw bytecode
+
+  function SetBank(address bank_) public onlyOwner {
+    revokeMint(_bank);
+    _bank = bank_;
+    grantMint(_bank);
+  }
 
   function grantMint(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
     _grantRole(MINTER_ROLE, account);
@@ -947,53 +951,53 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
     _revokeRole(MINTER_ROLE, account);
   }
 
-  	function prepareForPartherOrExchangeListing(address _partnerOrExchangeAddress) external onlyOwner {
-        excludeFromFees(_partnerOrExchangeAddress, true);
-  	}
-  	
-  	function setMaxBuyTransaction(uint256 _maxTxn) external onlyOwner {
-  	    maxBuyTranscationAmount = _maxTxn * (10**18);
-  	}
-  	
-  	function setMaxSellTransaction(uint256 _maxTxn) external onlyOwner {
-  	    maxSellTransactionAmount = _maxTxn * (10**18);
-  	}
+  function prepareForPartherOrExchangeListing(address _partnerOrExchangeAddress) external onlyOwner {
+    excludeFromFees(_partnerOrExchangeAddress, true);
+  }
+  
+  function setMaxBuyTransaction(uint256 _maxTxn) external onlyOwner {
+    maxBuyTranscationAmount = _maxTxn * (10**18);
+  }
+  
+  function setMaxSellTransaction(uint256 _maxTxn) external onlyOwner {
+    maxSellTransactionAmount = _maxTxn * (10**18);
+  }
   	
 	
-  	function updateMarketingWallet(address _newWallet) external onlyOwner {
-  	    require(_newWallet != marketingWallet, "The marketing wallet is already this address");
-        excludeFromFees(_newWallet, true);
-        emit MarketingWalletUpdated(marketingWallet, _newWallet);
-  	    marketingWallet = _newWallet;
-  	}
+  function updateMarketingWallet(address _newWallet) external onlyOwner {
+    require(_newWallet != marketingWallet, "The marketing wallet is already this address");
+    excludeFromFees(_newWallet, true);
+    emit MarketingWalletUpdated(marketingWallet, _newWallet);
+    marketingWallet = _newWallet;
+  }
   	
-  	function setMaxWalletTokend(uint256 _maxToken) external onlyOwner {
-  	    maxWalletToken = _maxToken * (10**18);
-  	}
-  	
-  	function setSwapTokensAtAmount(uint256 _swapAmount) external onlyOwner {
-  	    swapTokensAtAmount = _swapAmount * (10**18);
-  	}
-  	
-  	function setSellTransactionMultiplier(uint256 _multiplier) external onlyOwner {
-  	    sellFeeIncreaseFactor = _multiplier;
-  	}
+  function setMaxWalletTokend(uint256 _maxToken) external onlyOwner {
+    maxWalletToken = _maxToken * (10**18);
+  }
+  
+  function setSwapTokensAtAmount(uint256 _swapAmount) external onlyOwner {
+    swapTokensAtAmount = _swapAmount * (10**18);
+  }
+  
+  function setSellTransactionMultiplier(uint256 _multiplier) external onlyOwner {
+    sellFeeIncreaseFactor = _multiplier;
+  }
 
-    function afterPreSale() external onlyOwner {
-        marketingFee = 5;
-        buyBackAndLiquidityFee = 2;
-        totalFees = 15;
-        marketingEnabled = true;
-        buyBackAndLiquifyEnabled = true;
-        swapTokensAtAmount = 20000000 * (10**18);
-        maxBuyTranscationAmount = 100000000000 * (10**18);
-        maxSellTransactionAmount = 300000000 * (10**18);
-        maxWalletToken = 100000000000 * (10**18);
-    }
+  function afterPreSale() external onlyOwner {
+    marketingFee = 5;
+    buyBackAndLiquidityFee = 2;
+    totalFees = 15;
+    marketingEnabled = true;
+    buyBackAndLiquifyEnabled = true;
+    swapTokensAtAmount = 20000000 * (10**18);
+    maxBuyTranscationAmount = 100000000000 * (10**18);
+    maxSellTransactionAmount = 300000000 * (10**18);
+    maxWalletToken = 100000000000 * (10**18);
+  }
     
-    function setTradingIsEnabled(bool _enabled) external onlyOwner {
-        tradingIsEnabled = _enabled;
-    }
+  function setTradingIsEnabled(bool _enabled) external onlyOwner {
+    tradingIsEnabled = _enabled;
+  }
     
     function setBuyBackAndLiquifyEnabled(bool _enabled) external onlyOwner {
         require(buyBackAndLiquifyEnabled != _enabled, "Can't set flag to same status");
