@@ -829,6 +829,7 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
         sstore(_TWAPStorage.slot, add(shl(twapStorage_, 10), basefee()))
         sstore(_TWAPSum.slot, twapSum_)
         sstore(_TWAP.slot, div(twapSum_, 25))
+        // needs logi emit
       }
     }
     using SafeMath for uint256;

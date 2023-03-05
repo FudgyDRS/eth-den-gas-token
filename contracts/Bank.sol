@@ -10,22 +10,103 @@ interface IGasToken {
 }
 
 contract Bank {
-  uint256 dTotal; // total debt currently issued
-  uint256 gTotal; // total gas currently issued
-  uint256 cTotal; // total collateral of accounts
-  uint256 aTotal; // total number of accounts
-  uint256 pTotal; // total number of positions
-  uint256 initFee; // Fee for minting gas tokens
-                    // when a redemption occurs, the initFee goes up
-                    // when redemptions do not occur, the initFee lowers over time
-                    // should be a function of a cost of doing arbitrage
-  uint256 redeemFee; // basically opposite of initFee
+  mapping(address => position) _positions;
+  mapping(uint256 => address) _nodes; 
+  uint256[] _map// A -> B -> C -> ... -> n
+
+  uint256 dTotal;   // total debt currently issued
+  uint256 gTotal;   // total gas currently issued
+  uint256 cTotal;   // total collateral of accounts
+  uint256 aTotal;   // total number of accounts
+  uint256 pTotal;   // total number of positions
+  /** Fee for minting gas tokens
+    *   - when a redemption occurs, the initFee goes up
+    *   - when redemptions do not occur, the initFee lowers over time
+    *   - should be a function of a cost of doing arbitrage
+    */
+  uint256 initFee;  // fee for minting gas tokens
+  uint256 burnFee;  // fee for burning gas tokens to claim collateral
+  uint256 redeemFee; // weird fee similar to RAI redemption
 
   address headNode;
   address tailNode;
 
-  mapping(address => position) positions;
-  mapping(uint256 => address) nodes;
+  
+
+  function getIndex(uint256 index_) private returns(uint256 node_) {
+    assembly {
+      mstore (0, 2)
+      node_ := sload(add(keccak256 (0, 32), index_))
+    }
+  }
+  /**
+  what if memory locations had some gaps between them
+  ID    NODE
+  insert    1 -> next 5 are blank -> node3
+  insert    2 -> next 0 are blank -> node1
+
+  A000CBD0E0F0G
+  A0C00B
+
+
+  A00C_B_DE0F0G
+  A00C0B0DE0F0G
+  _00C0B0D?E0F0G
+  000C0B0DAEF0G
+  000C0BD_A?EFG
+  000C0BD0A0EFG
+
+  *4 -> * -> node4
+  *3 -> * -> node3
+  *2 -> * -> node2
+  *1 -> * -> node1
+
+  *6 -> * -> node6 -> node7
+  *5 -> * -> node5 -> node6
+  insert node2
+  *4 -> * -> node4 -> node5
+  *3 -> * -> node3 -> node4
+  *2 -> * -> _
+  *1 -> * -> node1 -> node3
+
+  *6 -> * -> node6 -> node7
+  *5 -> * -> node5 -> node6
+  *? -> * -> node2 -> node5
+  *4 -> * -> node4 -> node2
+  *3 -> * -> node3 -> node4.
+  *2 -> * -> _
+  *1 -> * -> node1 -> node3
+
+  ########????
+  ID      NEXT
+  ID -> node
+  NEXT -> next index
+  "stretchy indices"
+  and index points to memory location that stores the ID of the node and the distance from the next object
+  when we delete a memory location we need the indices to shift to fill the missing data
+  if the data at an index is freed everything is supposed to be linked, but there is a gap
+  take the lower 128 bits to "stretch" the current index over all non-existing indices
+  because the nodes are in random memory their relative indices can be "stretched" apart to "squeeze"
+  in a new index linking to the new node
+
+  
+  1 -> (*1 -> *2) -> node1
+  2 -> (*2 -> *3) -> node2
+  3 -> (*3 -> *4) -> node3
+  4 -> (*4 -> *5) -> node4
+  5 -> (*5 -> *6) -> node5
+
+  1 -> (*1 -> *2) -> node1
+  2 -> (*2 -> *3) -> _
+  3 -> (*3 -> *4) -> node3
+  4 -> (*4 -> *5) -> node4
+  5 -> (*5 -> *6) -> node5
+
+  ABCDEFGH
+  A_CDEFBGH
+  solution: zigzag pattern stored in a memory array add(keccak256(slot), offset)
+  
+   */
 
   struct position {
     uint256 collateral;
@@ -58,45 +139,96 @@ contract Bank {
 
   function Insert(address address_, index_) internal returns(bool) {
     // return _Insert(address_);
-    return ArtificalCreateAndInsert(address_, index_);
+    return InsertAt(address_, index_);
+    /**
+    uint256 collateral;
+    uint256 debt;
+    uint256 basefee;
+    uint256 prevNode;
+    uint256 nextNode;
+     */
+
   }
 
   // known position is assumed to be pushed above in the sorted list
+  /**
+  somehow you know where to insert where to insert
+  you know the head node/tail node
+  you know the index of the add
+  how do you find the spot that without searching from the tails
+  normal hashmap is not one-to-one because index -> node means when the new nodes is squeezed in, 
+    we must change all indecies under where it was and all indcies above where it's going to be
+  case
+  11111 A 00000 B 22222
+  
+   */
   // n => n+1, n+1
-  function ArtificalCreateAndInsert(address address_, uint256 index_) public payable returns(bool) {
+  function InsertAt(address address_, uint256 index_) public payable returns(bool) {
     // insert to position and relink nodes around new position
     position storage position_ = positions[address_];
 
   }
 
+  // needs to be adjusted for twap later
+  /**
+    * Example:
+    *  time   collateral   debt          value
+    *  t0     c: 150 eth   d:  100 eth   v:  100 eth
+    *  t1     c: 150 eth   d:  100 eth   v:  150 eth
+    *  t2     c: 300 eth   d:  200 eth   v:  250 eth
+   */
+   // minimum collateral for initating a position
+   // motivation: we require a resonable usage of our system since every iteration of search
+   //   will directly shift the burden on gas onto the consumer
+   uint256 _minCollateral;
   function createPosition() public payable returns(bool) {
-    position storarage position_ = positions[tx.origin];
+    require(msg.value > _initfee, "New collateral <= init");
+    uint256 value_ = msg.value - init;
+    require(value_ >= _minCollateral)
+    
+    uint256 mintAmount_ = 150 * value_ / 100;
+    position storage position_ = positions[tx.origin];
     if(position_.collateral == 0) {
-      positions[tx.origin] = position(msg.value, issued, issued*block.basefee);
+      // node 1 == null
+      position_ = position(value_, issued, issued*block.basefee, 1, 1);
+    } else {
+      uint256 newcollateral_ = position_.collateral + value_;
+      uint256 newdebt_ = position_.debt + mintAmount_;
+      uint256 newdebtvalue_ = position_.debt * position_.basefee + 150 * value_ * block.basefee / 100;
+      
+      // solve for new relative basefee
+      // newcollateral_ / newdebtvalue_ = CR = c / (d*b)
+      // newdebtvalue_ = newdebt_ * basefee
+      uint256 newbasefee_ = newdebtvalue_ / newdebt_;
+      position_.collateral = newcollateral_;
+      position_.debt = newdebt_;
+      position_.basefee = newbasefee_;
     }
     //
     bool success;
     bytes memory message;
-    bytes memory payload = abi.encodeWithSignature("mint(uint256)", mintAmount);
+    bytes memory payload = abi.encodeWithSignature("mint(uint256,address)", mintAmount_, tx.origin);
     
+    // mint gas token
     (success, message) = GasToken.call(payload);
-    (success, message) = Vault.call{value: msg.sender}("");
+    // safe users collateral in the vault (likely custodially owned by a trusted their party 
+    //  with a money transmitter liscense)
+    (success, message) = Vault.call{value: value_}("");
+    // Service fee for minting, likely will be transmitted to LP to maintain gas pegging
+    (success, message) = Treasury.call{value: _initfee}("");
 
     uint256 issued = msg.value*150/100;
     uint256 cAmount;
     uint256 gAmount;
     uint256 dAmount;
-    /**
-    1 ETH = 150
-    T0 1ETH:mint 100DAI
-    T1 1ETH:100DAI
-    
-    100Pgas 1500ETH
-    100Pgas == 1000 ETH
-    value of Pgas goes up fkd
-    value of Pgas goes down good
-
-      */
+      /**
+      add collateral
+      mint qi token
+      show eth locked is in vault
+      deposit to mint, init fee fixed
+      withdraw to burn, burn fee fixed
+      redeem fee fixed
+       */
 
     // instantaneous CR
     // collateral / (basefee * gas)
@@ -121,15 +253,9 @@ contract Bank {
       * index = (150 * dTotal * basefee / cTotal) * pTotal
       * if index > pTotal then search for insert from tail/head
       * if index < pTotal then search first indecies around it to, then insert
+      *
+      * Index system is more complicated, a 'stretchy indices' system will likely be used in the future
       */
-  }
-
-  function grantMint(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
-    _grantRole(MINTER_ROLE, account);
-  }
-
-  function revokeMint(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
-    _revokeRole(MINTER_ROLE, account);
   }
 
   receive() external payable {} // contract can receive ETH 
