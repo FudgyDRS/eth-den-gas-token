@@ -7,6 +7,8 @@ import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
 contract LiquidationEngine is Ownable, AccessControlEnumerable {
   constructor(address gasToken_, address bank_) {
     _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    _gasToken = gasToken_;
+    _bank = bank_;
   }
 
   address _gasToken;
@@ -41,7 +43,7 @@ contract LiquidationEngine is Ownable, AccessControlEnumerable {
     bool success;
     bytes memory message;
     bytes memory payload = abi.encodeWithSignature("TargetedLiquidation(address)", address_);
-    (success, message) = Bank.call(payload);
+    (success, message) = _bank.call(payload);
     require(success);
   }
 

@@ -3,9 +3,12 @@ pragma solidity ^0.8.19;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 // in the future to comply with SEC regulations access control must be gated to kill fraudulent accounts
 
-// interface IGasToken {} // setup later
+interface IGasToken {
+  function Burn(uint256 amount) external;
+} // setup later
 
 contract Bank is Ownable, AccessControlEnumerable {
   mapping(address => position) _positions;
@@ -118,8 +121,8 @@ contract Bank is Ownable, AccessControlEnumerable {
     uint256 collateral;
     uint256 debt;
     uint256 basefee;
-    uint256 prevNode;
-    uint256 nextNode;
+    address prevNode;
+    address nextNode;
   }
 
   constructor(address gasToken_, address vault_, address treasury_) {
@@ -141,17 +144,17 @@ contract Bank is Ownable, AccessControlEnumerable {
     uint256 CR_ = 10000 * position_.collateral / (position_.basefee * position_.debt); // divisor 10000
     // create weight of current solvency
     uint256 weight_ = 150 * dTotal * block.basefee / cTotal; // weight can be above 1 (significantly overcollateralized vault)
-    position memory headNode_ = position(headNode);
-    position memory tailNode_ = position(tailNode);
-    uint256 headCR_ = 1000 * headNode.collateral / (block.basefee() * headNode_.debt);
-    uint256 tailCR_ = 1000 * tailNode.collateral / (block.basefee() * tailNode_.debt);
+    position memory headNode_ = _positions[headNode];
+    position memory tailNode_ = _positions[tailNode];
+    uint256 headCR_ = 1000 * _positions[headNode].collateral / (block.basefee * headNode_.debt);
+    uint256 tailCR_ = 1000 * _positions[tailNode].collateral / (block.basefee * tailNode_.debt);
     uint256 median_ = (headCR_ + tailCR_) / 2;
     // if index > pTotal
   } 
 
   function Insert(address address_, address index_) internal returns(bool) {
     // return _Insert(address_);
-    return InsertAt(address_, index_);
+    //return InsertAt(address_, index_);
     /**
     uint256 collateral;
     uint256 debt;
@@ -175,9 +178,16 @@ contract Bank is Ownable, AccessControlEnumerable {
   
    */
   // n => n+1, n+1
-  function InsertAt(address address_, address index_) public payable returns(bool) {
+  function InsertAt(address address_, address next_, address prev_) public payable returns(bool) {
     // insert to position and relink nodes around new position
     position storage position_ = _positions[address_];
+    if(_positions[next_].prevNode == address(1)) {
+      //position_.nextNode = next_;
+    } else {
+      //position_.head =
+    } // unfinished and unused function
+    
+    pTotal++;
 
   }
 
@@ -193,7 +203,7 @@ contract Bank is Ownable, AccessControlEnumerable {
    // motivation: we require a resonable usage of our system since every iteration of search
    //   will directly shift the burden on gas onto the consumer
    uint256 _minCollateral;
-  function createPosition() public payable returns(bool) {
+  function InitPosition() public payable returns(bool) {
     require(msg.value > _initFee, "New collateral <= init");
     uint256 value_ = msg.value - _initFee;
     require(value_ >= _minCollateral, "Min collateral not met");
@@ -202,7 +212,12 @@ contract Bank is Ownable, AccessControlEnumerable {
     position storage position_ = _positions[tx.origin];
     if(position_.collateral == 0) {
       // node 1 == null
-      position_ = position(value_, mintAmount_, block.basefee, 1, 1);
+      position_.collateral = value_;
+      position_.debt = mintAmount_;
+      position_.basefee = block.basefee;
+      position_.nextNode = address(1);
+      position_.prevNode = address(1);
+      //position_ = position(value_, mintAmount_, block.basefee, address(1), address(1));
     } else {
       uint256 newcollateral_ = position_.collateral + value_;
       uint256 newdebt_ = position_.debt + mintAmount_;
@@ -222,14 +237,16 @@ contract Bank is Ownable, AccessControlEnumerable {
     bytes memory payload = abi.encodeWithSignature("mint(uint256,address)", mintAmount_, tx.origin);
     
     // mint gas token
-    (success, message) = GasToken.call(payload);
+    (success, message) = _gasToken.call(payload);
     // safe users collateral in the vault (likely custodially owned by a trusted their party 
     //  with a money transmitter liscense)
-    (success, message) = Vault.call{value: value_}("");
+    (success, message) = _vault.call{value: value_}("");
     // Service fee for minting, likely will be transmitted to LP to maintain gas pegging
-    (success, message) = Treasury.call{value: _initFee}("");
+    (success, message) = _treasury.call{value: _initFee}("");
 
+    // haven't inserted to the correct spot
     emit positionCreated(tx.origin, position_.collateral, position_.debt, position_.basefee);
+    return true;
     //take the ETH temp
     //send the ETH to the vault
     //mint and then issue Pgas
@@ -251,6 +268,31 @@ contract Bank is Ownable, AccessControlEnumerable {
       *
       * Index system is more complicated, a 'stretchy indices' system will likely be used in the future
       */
+  }
+
+  function BurnPosition(uint256 amount_) public payable returns(bool) {
+    require(msg.value >= _burnFee, "Insufficent funds");
+    position storage position_ = _positions[tx.origin];
+    require(amount_ > 0);
+    require(position_.collateral > 0);
+    require(position_.debt > 0);
+    
+    require(IERC20(_gasToken).balanceOf(tx.origin) >= amount_);
+    bool success;
+    bytes memory message;
+    uint256 value_ = position_.collateral * amount_ / position_.debt;
+    bytes memory payload = abi.encodeWithSignature("Withdraw(uint256)", value_);
+    IGasToken(_gasToken).Burn(amount_);
+    position_.collateral -= value_;
+    position_.debt -= amount_;
+    if(position_.collateral == 0) {
+      if(position_.prevNode != address(1) && position_.prevNode != address(1)) { // fallacy but time crunch
+        _positions[position_.prevNode].nextNode = position_.nextNode;
+        _positions[position_.nextNode].prevNode = position_.prevNode;
+      }
+    }
+    // should be reinserted but not for MVP
+
   }
 
   receive() external payable {} // contract can receive ETH 

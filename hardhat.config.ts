@@ -48,9 +48,14 @@ const config = {
       chainId: 80001,
       accounts: [process.env.PRIVATE_KEY],
     },
+    neonTestnet: {
+      url: "https://devnet.neonevm.org",
+      chainId: 245022926,
+      accounts: [process.env.PRIVATE_KEY],
+    }
   },
   solidity: {
-    version: "0.8.17",
+    version: "0.8.19",
     settings: {
       optimizer: {
         enabled: true,

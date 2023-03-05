@@ -1,85 +1,87 @@
 // SPDX-License-Identifier: Unlicensed
 pragma solidity ^0.8.19;
 
-import '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
+/* import '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
 
 import '@uniswap/v3-core/contracts/libraries/TickMath.sol';
 import '@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol';
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
-import '@uniswap/v3-periphery/contracts/base/LiquidityManagement.sol';
+import '@uniswap/v3-periphery/contracts/base/LiquidityManagement.sol'; */
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+//import '@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol';
 
-import '@uniswap/v3-core/contracts/interfaces/IERC20Minimal.sol';
-import '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
-import '@uniswap/v3-periphery/contracts/interfaces/IPeripheryImmutableState.sol';
-import '@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol';
+// import '@uniswap/v3-core/contracts/interfaces/IERC20Minimal.sol';
+// import '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
+// import '@uniswap/v3-periphery/contracts/interfaces/IPeripheryImmutableState.sol';
+// import '@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol';
 
 /// @title Router token swapping functionality
 /// @notice Functions for swapping tokens via Uniswap V3
-interface ISwapRouter is IUniswapV3SwapCallback, IPeripheryImmutableState {
-    struct ExactInputSingleParams {
-        address tokenIn;
-        address tokenOut;
-        uint24 fee;
-        address recipient;
-        uint256 deadline;
-        uint256 amountIn;
-        uint256 amountOutMinimum;
-        uint160 sqrtPriceLimitX96;
-    }
+interface ISwapRouter /* is IUniswapV3SwapCallback, IPeripheryImmutableState */ {
+  struct ExactInputSingleParams {
+    address tokenIn;
+    address tokenOut;
+    uint24 fee;
+    address recipient;
+    uint256 deadline;
+    uint256 amountIn;
+    uint256 amountOutMinimum;
+    uint160 sqrtPriceLimitX96;
+  }
 
-    /// @notice Swaps `amountIn` of one token for as much as possible of another token
-    /// @param params The parameters necessary for the swap, encoded as `ExactInputSingleParams` in calldata
-    /// @return amountOut The amount of the received token
-    function exactInputSingle(ExactInputSingleParams calldata params) external payable returns (uint256 amountOut);
+  /// @notice Swaps `amountIn` of one token for as much as possible of another token
+  /// @param params The parameters necessary for the swap, encoded as `ExactInputSingleParams` in calldata
+  /// @return amountOut The amount of the received token
+  function exactInputSingle(ExactInputSingleParams calldata params) external payable returns (uint256 amountOut);
 
-    struct ExactInputParams {
-        bytes path;
-        address recipient;
-        uint256 deadline;
-        uint256 amountIn;
-        uint256 amountOutMinimum;
-    }
+  struct ExactInputParams {
+    bytes path;
+    address recipient;
+    uint256 deadline;
+    uint256 amountIn;
+    uint256 amountOutMinimum;
+  }
 
-    /// @notice Swaps `amountIn` of one token for as much as possible of another along the specified path
-    /// @param params The parameters necessary for the multi-hop swap, encoded as `ExactInputParams` in calldata
-    /// @return amountOut The amount of the received token
-    function exactInput(ExactInputParams calldata params) external payable returns (uint256 amountOut);
+  /// @notice Swaps `amountIn` of one token for as much as possible of another along the specified path
+  /// @param params The parameters necessary for the multi-hop swap, encoded as `ExactInputParams` in calldata
+  /// @return amountOut The amount of the received token
+  function exactInput(ExactInputParams calldata params) external payable returns (uint256 amountOut);
 
-    struct ExactOutputSingleParams {
-        address tokenIn;
-        address tokenOut;
-        uint24 fee;
-        address recipient;
-        uint256 deadline;
-        uint256 amountOut;
-        uint256 amountInMaximum;
-        uint160 sqrtPriceLimitX96;
-    }
+  struct ExactOutputSingleParams {
+    address tokenIn;
+    address tokenOut;
+    uint24 fee;
+    address recipient;
+    uint256 deadline;
+    uint256 amountOut;
+    uint256 amountInMaximum;
+    uint160 sqrtPriceLimitX96;
+  }
 
     /// @notice Swaps as little as possible of one token for `amountOut` of another token
     /// @param params The parameters necessary for the swap, encoded as `ExactOutputSingleParams` in calldata
     /// @return amountIn The amount of the input token
     function exactOutputSingle(ExactOutputSingleParams calldata params) external payable returns (uint256 amountIn);
 
-    struct ExactOutputParams {
-        bytes path;
-        address recipient;
-        uint256 deadline;
-        uint256 amountOut;
-        uint256 amountInMaximum;
-    }
+  struct ExactOutputParams {
+    bytes path;
+    address recipient;
+    uint256 deadline;
+    uint256 amountOut;
+    uint256 amountInMaximum;
+  }
 
-    /// @notice Swaps as little as possible of one token for `amountOut` of another along the specified path (reversed)
-    /// @param params The parameters necessary for the multi-hop swap, encoded as `ExactOutputParams` in calldata
-    /// @return amountIn The amount of the input token
-    function exactOutput(ExactOutputParams calldata params) external payable returns (uint256 amountIn);
+  /// @notice Swaps as little as possible of one token for `amountOut` of another along the specified path (reversed)
+  /// @param params The parameters necessary for the multi-hop swap, encoded as `ExactOutputParams` in calldata
+  /// @return amountIn The amount of the input token
+  function exactOutput(ExactOutputParams calldata params) external payable returns (uint256 amountIn);
 }
 
 
-contract ERC20 is Context, IERC20Minimal {
+contract ERC20 is Context, IERC20/* , IERC20Minimal */ {
     using SafeMath for uint256;
 
     mapping (address => uint256) private _balances;
@@ -239,7 +241,7 @@ contract ERC20 is Context, IERC20Minimal {
 
         _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
         _balances[recipient] = _balances[recipient] + amount;
-        emit Transfer(sender, recipient, amount);
+        //emit Transfer(sender, recipient, amount);
     }
 
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
@@ -258,7 +260,7 @@ contract ERC20 is Context, IERC20Minimal {
 
         _totalSupply = _totalSupply + amount;
         _balances[account] = _balances[account] + amount;
-        emit Transfer(address(0), account, amount);
+        //emit Transfer(address(0), account, amount);
     }
 
     /**
@@ -279,7 +281,7 @@ contract ERC20 is Context, IERC20Minimal {
 
         _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
         _totalSupply = _totalSupply.sub(amount);
-        emit Transfer(account, address(0), amount);
+        //emit Transfer(account, address(0), amount);
     }
 
     /**
@@ -300,7 +302,7 @@ contract ERC20 is Context, IERC20Minimal {
         require(spender != address(0), "ERC20: approve to the zero address");
 
         _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
+        //emit Approval(owner, spender, amount);
     }
 
     /**
@@ -825,7 +827,7 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
       let twapSum_ := sload(_TWAPSum.slot)
       let twapStorage_ := sload(_TWAPStorage.slot)
       let oldestMask_ := 0x03FF000000000000000000000000000000000000000000000000000000000000
-      let twapSum_ := add(sub(twapSum_, and(twapStorage_, oldestMask_)), basefee())
+      twapSum_ := add(sub(twapSum_, and(twapStorage_, oldestMask_)), basefee())
       sstore(_TWAPStorage.slot, add(shl(twapStorage_, 10), basefee()))
       sstore(_TWAPSum.slot, twapSum_)
       sstore(_TWAP.slot, div(twapSum_, 25))
@@ -834,8 +836,8 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
   }
 
   bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-  IUniswapV2Router02 public uniswapV2Router;
-  address public immutable uniswapV2Pair;
+  //IUniswapV2Router02 public uniswapV2Router;
+  //address public immutable uniswapV2Pair;
 
   address public deadAddress = 0x000000000000000000000000000000000000dEaD;
 
@@ -845,7 +847,7 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
   bool public buyBackAndLiquifyEnabled = false;
 
   address public marketingWallet;
-  address public _bankAddress; // bank holds positions and acts as intermeidiary to ATM
+  address public _bank; // bank holds positions and acts as intermeidiary to ATM
   
   uint256 public maxBuyTranscationAmount;
   uint256 public maxSellTransactionAmount;
@@ -899,10 +901,10 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
   constructor() ERC20("QI Gas Token", "QI") {
     _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
     _setupRole(MINTER_ROLE, _msgSender());
-    owner = _msgSender();
+    //owner = _msgSender();
 
     marketingWallet = 0xbD4EAfe5215830399a9a30bA588fbe4180014639;
-    
+    /*
     IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
     ISwapRouter _uniswapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
       // Create a uniswap pair for this new token
@@ -915,12 +917,12 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
     //router = 0xE592427A0AEce92De3Edee1F18E0157C05861564
     
     address _uniswapV3Pool = IUniswapV3Factory(IPeripheryImmutableState().factory())
-      .createPool(tokenA, tokenB, poolFee);
+      .createPool(tokenA, tokenB, poolFee); 
 
     uniswapV2Router = _uniswapV2Router;
     uniswapV2Pair = _uniswapV2Pair;
 
-    _setAutomatedMarketMakerPair(_uniswapV2Pair, true);
+    _setAutomatedMarketMakerPair(_uniswapV2Pair, true);*/
 
     // exclude from paying fees or having max transaction amount
     excludeFromFees(marketingWallet, true);
@@ -936,6 +938,10 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
 
   receive() external payable {} // contract can receive ETH 
   fallback() external {} // contract can be sent raw bytecode
+
+  function Burn(uint256 amount_) public virtual {
+    transferFrom(tx.origin, address(0), amount_);
+  }
 
   function SetBank(address bank_) public onlyOwner {
     revokeMint(_bank);
@@ -1045,11 +1051,11 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
         totalFees = buyBackAndLiquidityFee + marketingFee;
     }
 
-    function updateUniswapV2Router(address newAddress) external onlyOwner {
+    /* function updateUniswapV2Router(address newAddress) external onlyOwner {
         require(newAddress != address(uniswapV2Router), "The router already has that address");
         emit UpdateUniswapV2Router(newAddress, address(uniswapV2Router));
         uniswapV2Router = IUniswapV2Router02(newAddress);
-    }
+    } */
 
     function excludeFromFees(address account, bool excluded) public onlyOwner {
         require(isExcludedFromFees[account] != excluded, "Account is already exluded from fees");
@@ -1067,11 +1073,11 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
         emit ExcludeMultipleAccountsFromFees(accounts, excluded);
     }
 
-    function setAutomatedMarketMakerPair(address pair, bool value) public onlyOwner {
+    /* function setAutomatedMarketMakerPair(address pair, bool value) public onlyOwner {
         require(pair != uniswapV2Pair, "The PancakeSwap pair cannot be removed from automatedMarketMakerPairs");
 
         _setAutomatedMarketMakerPair(pair, value);
-    }
+    } */
 
     function _setAutomatedMarketMakerPair(address pair, bool value) private onlyOwner {
         require(automatedMarketMakerPairs[pair] != value, "Automated market maker pair is already set to that value");
@@ -1083,4 +1089,4 @@ contract GasToken is ERC20, Ownable, AccessControlEnumerable {
     function getIsExcludedFromFees(address account) public view returns(bool) {
         return isExcludedFromFees[account];
     }
-
+}

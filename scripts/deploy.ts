@@ -73,7 +73,10 @@ const main = async () => {
     await liquidationEngine.deployed();
     console.log(`LiquidationEngine to ${liquidationEngine.address}`);
     // ------------------------------------------------------------------------
-    let tx = await gasToken.SetBank(bank.address);
+    let tx;
+    tx = await gasToken.SetBank(bank.address);
+    await tx.wait();
+    tx = await vault.SetBank(bank.address);
     await tx.wait();
 
     // ------------------------------------------------------------------------
