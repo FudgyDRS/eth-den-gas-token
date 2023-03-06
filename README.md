@@ -157,7 +157,7 @@ Qi Token will likely fail the 2nd prong. When applying Howey test to a cryptocur
 
 ## Next Steps
 
-1. Use dynamic simulation techniques to engineer the parameters related to liquidation engine, redemption mechanism, HA, and LP collateralization
+1. Use agent based simulation simulation techniques to engineer the parameters related to liquidation engine, redemption mechanism, HA, and LP collateralization
 2. Parallel development of a gas management protocol based on [LedgerHedger](https://eprint.iacr.org/2022/056) 
 3. Finish the Qi Protocol’s development
 4. Get audited by [Trail of Bits](https://www.trailofbits.com/) and [Gauntlet Networks](https://gauntlet.network/)
