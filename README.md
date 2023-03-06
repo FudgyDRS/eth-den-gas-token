@@ -162,4 +162,4 @@ Qi Token will likely fail the 2nd prong. When applying Howey test to a cryptocur
 3. Finish the Qi Protocol’s development
 4. Get audited by [Trail of Bits](https://www.trailofbits.com/) and [Gauntlet Networks](https://gauntlet.network/)
 5. Launch
-6. Integrating the Qi Token with AMMs such like [Panoptics](https://www.panoptic.xyz/), [Primitive Finance](https://www.primitive.xyz/), and [Voltz](https://www.voltz.xyz/) to construct synthetic option like payoffs
+6. Integrating the Qi Token with AMMs such like [Panoptics](https://www.panoptic.xyz/), [Primitive Finance](https://www.primitive.xyz/), and [Voltz](https://www.voltz.xyz/) to construct synthetic options for Qi Token
