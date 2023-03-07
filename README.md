@@ -67,7 +67,7 @@ Each Qi Token is pegged a TWAP([Time-Weighted Average Price](https://river.com/l
 Why TWAP? There are two reasons for this design choice:
 
 1. Base fees are extremely volatile. Exposing depositing users to extreme volatility require unattainablely high collateralization ratio to avoid cascading liquidations. Additionally, base fee’s erratic price movement also makes arbitrage difficult. Therefore, to smooth out the curve, we adopted the TWAP of base fee as the pegging index. To compensate for the insensitivity, we would provide a tool to calculate the exact amount of gas token one should buy to hedge the transaction cost. (see [Effective GasPrice Prediction for Carrying Out Economical Ethereum Transaction](https://www.semanticscholar.org/paper/Effective-GasPrice-Prediction-for-Carrying-Out-Liu-Wang/811ee56b9c8ae89164ef6f1797dc021f20d57fe0))
-2. There is potentially an attack vector that could be carried out by the miner to manipulate the base fee(see [The manipulation of the basefee in the context of EIP-1559](https://medium.com/nethermind-eth/the-manipulation-of-the-basefee-in-the-context-of-eip-1559-4b082898271c)). By extending the look back period, the cost of manipulation would outweigh the potential profit. In that case, no rational 
+2. There is potentially an attack vector that could be carried out by the block builders to manipulate the base fee(see [The manipulation of the basefee in the context of EIP-1559](https://medium.com/nethermind-eth/the-manipulation-of-the-basefee-in-the-context-of-eip-1559-4b082898271c)). By extending the look back period, the cost of manipulation would outweigh the potential profit. In that case, no rational 
 
 **Open Redemption**
 
