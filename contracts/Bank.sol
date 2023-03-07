@@ -115,6 +115,64 @@ contract Bank is Ownable, AccessControlEnumerable {
   A_CDEFBGH
   solution: zigzag pattern stored in a memory array add(keccak256(slot), offset)
   
+  FAILED to produce a concise method for injection into a list
+  thoughts are to treat it like something stretchy or like newtons cradle
+  but the same issue arises that you can delete objects and find objects but cannot sort them
+  the finding the objects in the sorted list pretails that the entire list is weighted
+  
+  I think somehow there needs to be a denisty curve to know where to look for objects
+  perhaps through research in to data structures a solution will reveal itself
+  other thoughts is a cantilever approach or a zk proofing method
+
+  one method is you don't know the indecies or the weights or the 
+  perhaps in a group of 
+  does the weight even change proportionally...YES
+  how to create a hashtable 
+  using xor to store values based on seed
+
+  what about an indexing systems that 'breaks' into sub lists
+  128 bits of list data, second 128 list break into sub list of objects
+  sub list elements have their own sub list
+  first element of a list has a the length of list
+  1234......567890
+      1234......56
+          123456
+  lets say an object has depth k, how do you find it
+
+
+  GOOOOOOAL ! ! !
+  what if you instead of sub list a new list but just the newest data, and told the lookup
+    tool where the new data started
+  1234567890    new table startes a 6
+  _____6____    if a lookup is empty is called the previous table for the data
+  _____6__9_    still a depth issue
+  _____67890
+  ======7====   depth issue, but what if your depth for all variables (each depth would need a depth table)
+                additionally each element would need to know if it's incremented or decremented n
+  but how to do deletes, same thing?
+  ______78901
+  ______78_01
+  ________01    
+  how about based on an signed integer lists
+   12345678901
+  1000000000001   12345678901
+  1000111111111   _234________  target 3 does exist, return data (if non-view/non-pure function set it)
+  0000001111111   ____567_____  4 DNE, -1 search 3 in previous layer
+  0011111111111   123_________  -1 search 4 in previous layer
+                  ____5_______  five does not exist
+  results         __3_________
+
+  //when inserting a new position the system knows where to input it and can check if that's valid
+  //when reinserting a position the system will know if the new position fits, check prev/next nodes
+
+
+  1111111111111
+  1000010000000   find (assume big endian logic)
+  
+
+
+  what about a system that the objects are logrithmically posiitoned or on an eliptical curve
+
    */
 
   struct position {
