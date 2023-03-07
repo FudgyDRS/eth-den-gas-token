@@ -28,7 +28,7 @@ Median Priority Fee vs. Base Fee from block 16653145 to 16660242(~1 day) from [h
 
 ### Supported Features
 - Qi Token minting/burning
-- Constructing synthetic option-like payoff structures by leveraing protocols such like [Panoptics](https://www.panoptic.xyz/), [Voltz](https://www.voltz.xyz/)
+- Constructing synthetic option-like payoff structures by leveraing protocols such like [Panoptics](https://www.panoptic.xyz/), [Voltz](https://www.voltz.xyz/), and Primtive(https://www.primitive.xyz/)
 - Gas fee margin trading(see sections Hedging Agents(HA and UniV3 LP Collateralization)
 
 
@@ -166,6 +166,4 @@ Qi Token will likely fail the 2nd prong. When applying Howey test to a cryptocur
 1. Use agent based simulation simulation techniques to engineer the parameters related to liquidation engine, redemption mechanism, HA, and LP collateralization
 2. Parallel development of a gas management protocol based on [LedgerHedger](https://eprint.iacr.org/2022/056) 
 3. Finish the Qi Protocol’s development
-4. Get audited by [Trail of Bits](https://www.trailofbits.com/) and [Gauntlet Networks](https://gauntlet.network/)
-5. Launch
 6. Integrating the Qi Token with AMMs such like [Panoptics](https://www.panoptic.xyz/), [Primitive Finance](https://www.primitive.xyz/), and [Voltz](https://www.voltz.xyz/) to construct synthetic options for Qi Token
