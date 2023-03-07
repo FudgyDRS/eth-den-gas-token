@@ -28,7 +28,7 @@ Median Priority Fee vs. Base Fee from block 16653145 to 16660242(~1 day) from [h
 
 ### Supported Features
 - Qi Token minting/burning
-- Constructing synthetic option-like payoff structures by leveraing protocol such like [Panoptics](https://www.panoptic.xyz/), [Voltz](https://www.voltz.xyz/)
+- Constructing synthetic option-like payoff structures by leveraing protocols such like [Panoptics](https://www.panoptic.xyz/), [Voltz](https://www.voltz.xyz/)
 - Gas fee margin trading(see sections Hedging Agents(HA and UniV3 LP Collateralization)
 
 
