@@ -26,6 +26,12 @@ Median Priority Fee vs. Base Fee from block 16653145 to 16660242(~1 day) from [h
 - In simple terms, Qi Protocol enables users to put in collateral and mint gas tokens(Qi token) to manage gas exposures and hedge positions with derivative positions.
 - In ETH-Denver 2023 hackathon, we are only focusing on the first part - building a gas token that tracks the `baseFee`.
 
+### Supported Features
+- Qi Token minting/burning
+- Constructing synthetic option-like payoff structures by leveraing protocol such like [Panoptics](https://www.panoptic.xyz/), [Voltz](https://www.voltz.xyz/)
+- Gas fee margin trading(see sections Hedging Agents(HA and UniV3 LP Collateralization)
+
+
 ### Use Case
 
 - Gas cost hedging:
