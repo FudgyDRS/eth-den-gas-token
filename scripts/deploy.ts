@@ -1,5 +1,4 @@
 import { ethers, network, run } from "hardhat";
-import config from "../config";
 
 const main = async () => {
   // Get network data from Hardhat config (see hardhat.config.ts).

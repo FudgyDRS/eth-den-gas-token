@@ -17,11 +17,11 @@ const config = {
   },
   networks: {
     hardhat: {},
-    bscTestnet: {
+    /* bscTestnet: {
       url: "https://data-seed-prebsc-1-s3.binance.org:8545/",
       chainId: 97,
       accounts: [process.env.PRIVATE_KEY],
-    },
+    }, */
     sepoliaTestnet: {
       url: process.env.INFURA_API_SEPOLIA,
       chainId: 11155111,
@@ -32,7 +32,7 @@ const config = {
       chainId: 5,
       accounts: [process.env.PRIVATE_KEY],
     },
-    scrollTestnet: {
+    /* scrollTestnet: {
       url: process.env.SCROLL_TESTNET_URL || "",
       chainId: 534351,
       accounts:
@@ -52,7 +52,7 @@ const config = {
       url: "https://devnet.neonevm.org/",
       chainId: 245022926,
       accounts: [process.env.PRIVATE_KEY],
-    }
+    } */
   },
   solidity: {
     version: "0.8.19",
